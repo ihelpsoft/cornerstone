@@ -12,14 +12,20 @@ describe('imageLoader registration module', function () {
       console.log('loading via exampleImageLoader1');
       console.log(options);
 
-      return $.Deferred();
+      return {
+        promise: new Promise(() => {}),
+        cancelFn: undefined
+      };
     };
 
     this.exampleImageLoader2 = (imageId, options) => {
       console.log('loading via exampleImageLoader2');
       console.log(options);
 
-      return $.Deferred();
+      return {
+        promise: new Promise(() => {}),
+        cancelFn: undefined
+      };
     };
 
     this.exampleScheme1 = 'example1';
@@ -61,14 +67,20 @@ describe('imageLoader loading module', function () {
       console.log('loading via exampleImageLoader1');
       console.log(options);
 
-      return $.Deferred();
+      return {
+        promise: new Promise(() => {}),
+        cancelFn: undefined
+      };
     };
 
     this.exampleImageLoader2 = (imageId, options) => {
       console.log('loading via exampleImageLoader2');
       console.log(options);
 
-      return $.Deferred();
+      return {
+        promise: new Promise(() => {}),
+        cancelFn: undefined
+      };
     };
 
     this.exampleScheme1 = 'example1';

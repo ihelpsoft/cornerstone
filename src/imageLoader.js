@@ -1,5 +1,5 @@
 import { $ } from './externalModules.js';
-import { getImagePromise, putImagePromise } from './imageCache.js';
+import { getImageLoadObject, putImageLoadObject } from './imageCache.js';
 import events from './events.js';
 
 /**
@@ -62,15 +62,15 @@ export function loadImage (imageId, options) {
     throw new Error('loadImage: parameter imageId must not be undefined');
   }
 
-  let imagePromise = getImagePromise(imageId);
+  let imageLoadObject = getImageLoadObject(imageId);
 
-  if (imagePromise !== undefined) {
-    return imagePromise;
+  if (imageLoadObject !== undefined) {
+    return imageLoadObject;
   }
 
-  imagePromise = loadImageFromImageLoader(imageId, options);
+  imageLoadObject = loadImageFromImageLoader(imageId, options);
 
-  return imagePromise;
+  return imageLoadObject;
 }
 
 //
@@ -89,17 +89,17 @@ export function loadAndCacheImage (imageId, options) {
     throw new Error('loadAndCacheImage: parameter imageId must not be undefined');
   }
 
-  let imagePromise = getImagePromise(imageId);
+  let imageLoadObject = getImageLoadObject(imageId);
 
-  if (imagePromise !== undefined) {
-    return imagePromise;
+  if (imageLoadObject !== undefined) {
+    return imageLoadObject;
   }
 
-  imagePromise = loadImageFromImageLoader(imageId, options);
+  imageLoadObject = loadImageFromImageLoader(imageId, options);
 
-  putImagePromise(imageId, imagePromise);
+  putImageLoadObject(imageId, imageLoadObject);
 
-  return imagePromise;
+  return imageLoadObject;
 }
 
 /**

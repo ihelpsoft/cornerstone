@@ -51,7 +51,7 @@ function purgeCacheIfNecessary () {
     const lastCachedImage = cachedImages[cachedImages.length - 1];
     const imageId = lastCachedImage.imageId;
 
-    removeImagePromise(imageId);
+    removeImageLoadObject(imageId);
 
     $(events).trigger('CornerstoneImageCachePromiseRemoved', { imageId });
   }
@@ -61,22 +61,25 @@ function purgeCacheIfNecessary () {
   $(events).trigger('CornerstoneImageCacheFull', cacheInfo);
 }
 
-export function putImagePromise (imageId, imagePromise) {
+export function putImageLoadObject (imageId, imageLoadObject) {
   if (imageId === undefined) {
-    throw new Error('getImagePromise: imageId must not be undefined');
+    throw new Error('putImageLoadObject: imageId must not be undefined');
   }
-  if (imagePromise === undefined) {
-    throw new Error('getImagePromise: imagePromise must not be undefined');
+  if (imageLoadObject.promise === undefined) {
+    throw new Error('putImageLoadObject: imageLoadObject.promise must not be undefined');
   }
   if (imageCacheDict.hasOwnProperty(imageId) === true) {
-    throw new Error('putImagePromise: imageId already in cache');
+    throw new Error('putImageLoadObject: imageId already in cache');
+  }
+  if (imageLoadObject.cancelFn && typeof imageLoadObject.cancelFn !== 'function') {
+    throw new Error('putImageLoadObject: imageLoadObject.cancelFn must be a function');
   }
 
   const cachedImage = {
     loaded: false,
     imageId,
     sharedCacheKey: undefined, // The sharedCacheKey for this imageId.  undefined by default
-    imagePromise,
+    imageLoadObject,
     timeStamp: new Date(),
     sizeInBytes: 0
   };
@@ -84,7 +87,7 @@ export function putImagePromise (imageId, imagePromise) {
   imageCacheDict[imageId] = cachedImage;
   cachedImages.push(cachedImage);
 
-  imagePromise.then(function (image) {
+  imageLoadObject.promise.then(function (image) {
     if (cachedImages.indexOf(cachedImage) === -1) {
       // If the image has been purged before being loaded, we stop here.
       return;
@@ -94,10 +97,10 @@ export function putImagePromise (imageId, imagePromise) {
     cachedImage.image = image;
 
     if (image.sizeInBytes === undefined) {
-      throw new Error('putImagePromise: sizeInBytes must not be undefined');
+      throw new Error('putImageLoadObject: image.sizeInBytes must not be undefined');
     }
     if (image.sizeInBytes.toFixed === undefined) {
-      throw new Error('putImagePromise: image.sizeInBytes is not a number');
+      throw new Error('putImageLoadObject: image.sizeInBytes is not a number');
     }
 
     cachedImage.sizeInBytes = image.sizeInBytes;
@@ -112,9 +115,9 @@ export function putImagePromise (imageId, imagePromise) {
   });
 }
 
-export function getImagePromise (imageId) {
+export function getImageLoadObject (imageId) {
   if (imageId === undefined) {
-    throw new Error('getImagePromise: imageId must not be undefined');
+    throw new Error('getImageLoadObject: imageId must not be undefined');
   }
   const cachedImage = imageCacheDict[imageId];
 
@@ -122,30 +125,33 @@ export function getImagePromise (imageId) {
     return;
   }
 
-    // Bump time stamp for cached image
+  // Bump time stamp for cached image
   cachedImage.timeStamp = new Date();
 
-  return cachedImage.imagePromise;
+  return cachedImage.imageLoadObject;
 }
 
-export function removeImagePromise (imageId) {
+export function removeImageLoadObject (imageId) {
   if (imageId === undefined) {
-    throw new Error('removeImagePromise: imageId must not be undefined');
+    throw new Error('removeImageLoadObject: imageId must not be undefined');
   }
   const cachedImage = imageCacheDict[imageId];
 
   if (cachedImage === undefined) {
-    throw new Error('removeImagePromise: imageId was not present in imageCache');
+    throw new Error('removeImageLoadObject: imageId was not present in imageCache');
   }
 
-  cachedImage.imagePromise.reject();
+  if (cachedImage.imageLoadObject.cancelFn) {
+    cachedImage.imageLoadObject.cancelFn();
+  }
+
   cachedImages.splice(cachedImages.indexOf(cachedImage), 1);
   cacheSizeInBytes -= cachedImage.sizeInBytes;
   $(events).trigger('CornerstoneImageCacheChanged', {
     action: 'deleteImage',
     image: cachedImage
   });
-  decache(cachedImage.imagePromise);
+  decache(cachedImage.imageLoadObject.promise);
 
   delete imageCacheDict[imageId];
 }
@@ -158,7 +164,7 @@ export function getCacheInfo () {
   };
 }
 
-// This method should only be called by `removeImagePromise` because it's
+// This method should only be called by `removeImageLoadObject` because it's
 // The one that knows how to deal with shared cache keys and cache size.
 function decache (imagePromise) {
   imagePromise.then(function (image) {
@@ -172,7 +178,7 @@ export function purgeCache () {
   while (cachedImages.length > 0) {
     const removedCachedImage = cachedImages[0];
 
-    removeImagePromise(removedCachedImage.imageId);
+    removeImageLoadObject(removedCachedImage.imageId);
   }
 }
 
@@ -180,7 +186,7 @@ export function changeImageIdCacheSize (imageId, newCacheSize) {
   const cacheEntry = imageCacheDict[imageId];
 
   if (cacheEntry) {
-    cacheEntry.imagePromise.then(function (image) {
+    cacheEntry.imageLoadObject.promise.then(function (image) {
       const cacheSizeDifference = newCacheSize - image.sizeInBytes;
 
       image.sizeInBytes = newCacheSize;
@@ -198,9 +204,9 @@ export default {
   imageCache: imageCacheDict,
   cachedImages,
   setMaximumSizeBytes,
-  putImagePromise,
-  getImagePromise,
-  removeImagePromise,
+  putImageLoadObject,
+  getImageLoadObject,
+  removeImageLoadObject,
   getCacheInfo,
   purgeCache,
   changeImageIdCacheSize
