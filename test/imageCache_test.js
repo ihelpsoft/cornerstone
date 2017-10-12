@@ -47,14 +47,14 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
       sizeInBytes: 100
     };
 
+    purgeCache();
+
     this.imageLoadObject = {
       promise: new Promise((resolve) => {
         resolve(this.image);
       }),
       cancelFn: undefined
     };
-
-    purgeCache();
   });
 
   it('should allow image promises to be added to the cache (putImageLoadObject)', function () {
@@ -71,7 +71,7 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
     assert.equal(cacheInfo.cacheSizeInBytes, this.image.sizeInBytes);
   });
 
-  it('should throw an error if sizeInBytes is undefined (putImagePromise)', function () {
+  it('should throw an error if sizeInBytes is undefined (putImageLoadObject)', function () {
     // Arrange
     this.image.sizeInBytes = undefined;
     putImageLoadObject(this.image.imageId, this.imageLoadObject);
@@ -83,7 +83,7 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
     });
   });
 
-  it('should throw an error if sizeInBytes is not a number (putImagePromise)', function () {
+  it('should throw an error if sizeInBytes is not a number (putImageLoadObject)', function () {
     // Arrange
     this.image.sizeInBytes = '10000';
 
@@ -94,17 +94,17 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
     });
   });
 
-  it('should throw an error if imageId is not defined (putImagePromise)', function () {
+  it('should throw an error if imageId is not defined (putImageLoadObject)', function () {
     // Assert
     assert.throws(() => putImageLoadObject(undefined, this.imageLoadObject));
   });
 
-  it('should throw an error if imagePromise is not defined (putImagePromise)', function () {
+  it('should throw an error if imagePromise is not defined (putImageLoadObject)', function () {
     // Assert
     assert.throws(() => putImageLoadObject(this.image.imageId, undefined));
   });
 
-  it('should throw an error if imageId is already in the cache (putImagePromise)', function () {
+  it('should throw an error if imageId is already in the cache (putImageLoadObject)', function () {
     // Arrange
     putImageLoadObject(this.image.imageId, this.imageLoadObject);
 
@@ -175,7 +175,6 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
 
     // Arrange
     putImageLoadObject(image.imageId, imageLoadObject);
-    imageLoadObject.promise.resolve(image);
     const newCacheSize = 500;
 
     // Act
@@ -194,7 +193,6 @@ describe('Store, retrieve, and remove imagePromises from the cache', function ()
 
     // Arrange
     putImageLoadObject(image.imageId, imageLoadObject);
-    imageLoadObject.promise.resolve(image);
 
     // Act
     purgeCache();
